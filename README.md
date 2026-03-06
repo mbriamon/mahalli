@@ -1,5 +1,7 @@
 # Mahalee 🇯🇴 by Mary Briamonte(A) and Layann Wardeh(B)
 
+https://github.com/mbriamon/mahalli
+
 A tourist spot discovery app for Jordan. Browse and search cultural landmarks, nature sites, museums, and more.
 
 ## Features
