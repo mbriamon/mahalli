@@ -21,6 +21,12 @@ A tourist spot discovery app for Jordan. Browse and search cultural landmarks, n
 3. Run `npm run dev`
 4. Open `http://localhost:5173`
 
+## Dependencies
+Run `npm install` to install all dependencies. Key packages:
+- `parse` — Back4App/Parse SDK
+- `react-router-dom` — routing
+- `vite-plugin-node-polyfills` — required for Parse to work with Vite
+
 ## Team
 - Student A (Mary) — UML diagram, Parse initialization, Parse models
 - Student B (Layann) — Component tree, routing, components
