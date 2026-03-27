@@ -6,6 +6,7 @@ import Parse from "parse";
 import Env from "./environments";
 import Home from "./pages/Home";
 import SpotDetail from "./pages/SpotDetail";
+import Auth from "./pages/Auth";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 // Initialize Parse with Back4App credentials
@@ -37,8 +38,8 @@ function App() {
         />
 
         {/* Auth route — login/signup page, accessible without authentication */}
-        {/* Auth component will be added by Student B (Layann) */}
-        <Route path="/auth" element={<div>Auth coming soon</div>} />
+        <Route path="/auth" element={<Auth />} />
+
 
         {/* Catch-all: redirect unknown paths back to home */}
         <Route path="*" element={<Navigate to="/" replace />} />

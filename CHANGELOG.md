@@ -8,7 +8,10 @@
 - Auth route placeholder at /auth for Student B's login/register components
 
 ### Added (Student B - Layann)
-- (pending)
+- authService.js with login, register, logout, and getCurrentUser methods
+- Auth page component with login and register forms
+- Redirect to home if already logged in on the auth page
+- Updated App.jsx to use Auth component on /auth route
 
 ## [0.2.0] - 3/5/2026
 
