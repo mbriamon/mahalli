@@ -2,10 +2,14 @@
 
 ## [0.3.0] - 3/27/2026
 
+## [0.3.0] - 3/27/2026
+
 ### Added (Student A - Mary)
 - ProtectedRoute component to guard routes requiring authentication
 - Updated App.jsx routing to wrap Home and SpotDetail with ProtectedRoute
 - Auth route placeholder at /auth for Student B's login/register components
+- Auth page styling in App.css
+- Logout button on Home page that ends session and redirects to /auth
 
 ### Added (Student B - Layann)
 - authService.js with login, register, logout, and getCurrentUser methods
