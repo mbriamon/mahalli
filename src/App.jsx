@@ -1,11 +1,12 @@
 // App.jsx
 // Main app component - initializes Parse and sets up routing
 import React from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Parse from "parse";
 import Env from "./environments";
 import Home from "./pages/Home";
 import SpotDetail from "./pages/SpotDetail";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 // Initialize Parse with Back4App credentials
 Parse.initialize(Env.APPLICATION_ID, Env.JAVASCRIPT_KEY);
@@ -16,10 +17,31 @@ function App() {
     // BrowserRouter wraps all routes and enables navigation
     <BrowserRouter>
       <Routes>
-        {/* Home route - shows the spot list and search */}
-        <Route path="/" element={<Home />} />
-        {/* SpotDetail route - shows a single spot by id */}
-        <Route path="/spot/:id" element={<SpotDetail />} />
+        {/* Protected routes — require the user to be logged in */}
+        {/* ProtectedRoute redirects to /auth if no session is found */}
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Home />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/spot/:id"
+          element={
+            <ProtectedRoute>
+              <SpotDetail />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Auth route — login/signup page, accessible without authentication */}
+        {/* Auth component will be added by Student B (Layann) */}
+        <Route path="/auth" element={<div>Auth coming soon</div>} />
+
+        {/* Catch-all: redirect unknown paths back to home */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );
