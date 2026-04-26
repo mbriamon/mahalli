@@ -9,6 +9,7 @@ import Toast from "../components/Toast";
 import { getAllTouristSpots } from "../models/TouristSpot";
 import { getPreferences, hasVisited, getMyVisits } from "../services/userService";
 import { getMyHashtags } from "../services/reviewService";
+import { getSpotOfTheDay } from "../services/spotOfTheDay";
 import Parse from "parse";
 
 const MOODS = [
@@ -75,7 +76,6 @@ function getTimeOfDay() {
   return "evening";
 }
 
-// count visits in the current calendar month
 function getMonthStreak(visits) {
   const now   = new Date();
   const month = now.getMonth();
@@ -90,6 +90,7 @@ export default function Home() {
   const navigate                      = useNavigate();
   const [allSpots, setAllSpots]       = useState([]);
   const [curated, setCurated]         = useState([]);
+  const [spotOfDay, setSpotOfDay]     = useState(null);
   const [loading, setLoading]         = useState(true);
   const [reviewSpot, setReviewSpot]   = useState(null);
   const [toast, setToast]             = useState(null);
@@ -111,6 +112,9 @@ export default function Home() {
       setAllSpots(spots);
       setMyHashtags(tags);
       setMyVisits(visits);
+
+      // spot of the day
+      setSpotOfDay(getSpotOfTheDay(spots));
 
       const scored = spots
         .map((s) => ({ spot: s, score: scoreSpot(s, prefs, tags) }))
@@ -140,7 +144,6 @@ export default function Home() {
 
   const monthStreak = getMonthStreak(myVisits);
 
-  // apply mood filter if one is active
   const moodFiltered = activeMood
     ? allSpots.filter(MOODS.find((m) => m.label === activeMood)?.filter || (() => true))
     : null;
@@ -172,7 +175,6 @@ export default function Home() {
         .slice(0, 4)
     : [];
 
-  // spots in preferred cities the user hasn't visited yet
   const notVisitedYet = hasPrefs && prefs.cities.length > 0
     ? allSpots
         .filter((s) =>
@@ -270,7 +272,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* streak counter */}
             {monthStreak > 0 && (
               <div className="streak-badge">
                 <div className="streak-num">{monthStreak}</div>
@@ -284,7 +285,6 @@ export default function Home() {
             )}
           </div>
 
-          {/* preference tags */}
           {hasPrefs && (
             <div className="home-pref-tags">
               {prefs.categories.map((c) => (
@@ -296,7 +296,6 @@ export default function Home() {
             </div>
           )}
 
-          {/* hashtag signals */}
           {myHashtags.length > 0 && (
             <div className="home-hashtag-signal">
               <span className="home-hashtag-signal-label">
@@ -327,9 +326,7 @@ export default function Home() {
                 <button
                   key={m.label}
                   className={`mood-chip${activeMood === m.label ? " active" : ""}`}
-                  onClick={() => setActiveMood(
-                    activeMood === m.label ? null : m.label
-                  )}
+                  onClick={() => setActiveMood(activeMood === m.label ? null : m.label)}
                 >
                   {m.label}
                 </button>
@@ -346,7 +343,55 @@ export default function Home() {
       ) : (
         <div className="home-feed">
 
-          {/* top picks / mood results */}
+          {/* ── Spot of the day ── */}
+          {!activeMood && spotOfDay && (
+            <div className="feed-section">
+              <div className="feed-section-header">
+                <div className="feed-section-title">🌟 Spot of the day</div>
+                <span className="sotd-date">
+                  {new Date().toLocaleDateString("en-US", {
+                    weekday: "long", month: "long", day: "numeric"
+                  })}
+                </span>
+              </div>
+              <div
+                className="sotd-card"
+                onClick={() => navigate(`/spot/${spotOfDay.id}`)}
+              >
+                <div className="sotd-emoji">
+                  {getEmoji(spotOfDay.get("Category"))}
+                </div>
+                <div className="sotd-body">
+                  <span className={getCategoryClass(spotOfDay.get("Category"))}>
+                    {spotOfDay.get("Category")}
+                  </span>
+                  <div className="sotd-name">{spotOfDay.get("Name")}</div>
+                  <div className="sotd-city">📍 {spotOfDay.get("City")}</div>
+                  <p className="sotd-desc">{spotOfDay.get("Description")}</p>
+                  {spotOfDay.get("Insider_Tip") && (
+                    <div className="featured-insider-tip" style={{ marginTop: 8 }}>
+                      💡 {spotOfDay.get("Insider_Tip")}
+                    </div>
+                  )}
+                  <div className="sotd-foot">
+                    <span className="rating">★ {spotOfDay.get("Initial_Rating")}</span>
+                    <span className="price-range">{spotOfDay.get("Price_Range")}</span>
+                    <button
+                      className="mark-visited-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/spot/${spotOfDay.id}`);
+                      }}
+                    >
+                      Explore →
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* top picks */}
           <div className="feed-section">
             <div className="feed-section-header">
               <div className="feed-section-title">
@@ -373,9 +418,7 @@ export default function Home() {
           {!activeMood && notVisitedYet.length > 0 && (
             <div className="feed-section">
               <div className="feed-section-header">
-                <div className="feed-section-title">
-                  🗺 You haven't been here yet
-                </div>
+                <div className="feed-section-title">🗺 You haven't been here yet</div>
               </div>
               <div className="not-visited-band">
                 <div className="not-visited-sub">
@@ -447,7 +490,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* review modal */}
       {reviewSpot && (
         <ReviewModal
           spot={reviewSpot}
@@ -460,10 +502,10 @@ export default function Home() {
         />
       )}
 
-      {/* toast */}
       {toast && (
         <Toast message={toast} onDone={() => setToast(null)} />
       )}
     </div>
   );
 }
+

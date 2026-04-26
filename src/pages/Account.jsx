@@ -10,8 +10,9 @@ import PreferenceForm from "../components/PreferenceForm";
 import { logoutUser } from "../services/authService";
 import { getMyVisits, getPreferences } from "../services/userService";
 import { getMyReviews, getMyHashtags } from "../services/reviewService";
+import { getMyWishlist } from "../services/wishlistServices";
 
-const TABS = ["Diary", "Reviews", "Preferences"];
+const TABS = ["Diary", "Reviews", "Saved", "Preferences"];
 
 function formatDate(date) {
   if (!date) return "";
@@ -52,14 +53,16 @@ export default function Account() {
   useEffect(() => {
     async function load() {
       try {
-        const [v, r, h] = await Promise.all([
+        const [v, r, h, w] = await Promise.all([
           getMyVisits(),
           getMyReviews(),
           getMyHashtags(),
+          getMyWishlist(),
         ]);
         setVisits(v);
         setReviews(r);
         setHashtags(h);
+        setWishlist(w);
       } catch (err) {
         console.error(err);
       } finally {
@@ -219,6 +222,7 @@ export default function Account() {
           >
             {tab === "Diary"       ? "📖 Diary"       :
              tab === "Reviews"     ? "✍️ Reviews"     :
+             tab === "Saved"       ? "🔖 Saved"       :
              tab === "Preferences" ? "🎯 Preferences" : tab}
           </button>
         ))}
@@ -396,6 +400,60 @@ export default function Account() {
             </div>
           </div>
         )}
+
+        {/* ── Saved tab ── */}
+        {activeTab === "Saved" && (
+          <div>
+            {loading && (
+              <div className="loading-wrap"><div className="spinner" /></div>
+            )}
+
+            {!loading && wishlist.length === 0 && (
+              <div className="empty-state">
+                <div className="empty-icon">🔖</div>
+                <div className="empty-title">No saved spots yet</div>
+                <div className="empty-sub">
+                  Tap the ♡ on any spot in Explore to save it here for later.
+                </div>
+              </div>
+            )}
+
+            <div className="wishlist-grid">
+              {wishlist.map((w) => (
+                <div
+                  key={w.id}
+                  className="wishlist-card"
+                  onClick={() => navigate(`/spot/${w.spot.id}`)}
+                >
+                  <div className="wishlist-card-emoji">
+                    {w.spot.category === "food"     ? "🍽" :
+                     w.spot.category === "cafe"     ? "☕" :
+                     w.spot.category === "historic" ? "🏛" :
+                     w.spot.category === "nature"   ? "🌿" :
+                     w.spot.category === "culture"  ? "🎨" : "📍"}
+                  </div>
+                  <div className="wishlist-card-body">
+                    <div className="wishlist-card-name">{w.spot.name}</div>
+                    <div className="wishlist-card-meta">
+                      {w.spot.city}
+                      {w.spot.rating ? ` · ★ ${w.spot.rating}` : ""}
+                    </div>
+                    {w.spot.priceRange && (
+                      <span className="price-range">{w.spot.priceRange}</span>
+                    )}
+                    {w.spot.insiderTip && (
+                      <div className="wishlist-tip">
+                        💡 {w.spot.insiderTip}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+
 
         {/* ── Preferences tab ── */}
         {activeTab === "Preferences" && (
