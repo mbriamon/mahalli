@@ -1,25 +1,35 @@
 // SpotCard.jsx
-// Child component of SpotList
-// Displays a single tourist spot's details
 import React from "react";
 import { useNavigate } from "react-router-dom";
+
+// maps category name to a CSS class for the coloured pill
+function getCategoryClass(cat) {
+  if (!cat) return "category category-default";
+  switch (cat.toLowerCase()) {
+    case "food":     return "category category-food";
+    case "cafe":     return "category category-cafe";
+    case "historic": return "category category-historic";
+    case "nature":   return "category category-nature";
+    case "culture":  return "category category-culture";
+    default:         return "category category-default";
+  }
+}
 
 function SpotCard({ spot }) {
   const navigate = useNavigate();
 
-  // navigate to the detail page when a card is clicked
-  const handleClick = () => {
-    navigate(`/spot/${spot.id}`);
-  };
-
   return (
-    <div className="spot-card" onClick={handleClick}>
-      <h2>{spot.get("name")}</h2>
-      <p className="category">{spot.get("category")}</p>
-      <p className="city">{spot.get("city")}</p>
-      <p>{spot.get("description")}</p>
-      <p className="rating">Rating: {spot.get("rating")} / 5</p>
-      <p className="hours">{spot.get("openHours")}</p>
+    <div className="spot-card" onClick={() => navigate(`/spot/${spot.id}`)}>
+      <div className="spot-card-body">
+        <h2>{spot.get("Name")}</h2>
+        <span className={getCategoryClass(spot.get("Category"))}>
+          {spot.get("Category")}
+        </span>
+        <p className="city">{spot.get("City")}</p>
+        <p>{spot.get("Description")}</p>
+        <p className="rating">★ {spot.get("Initial_Rating")} / 5</p>
+        <p className="hours">{spot.get("Hours")}</p>
+      </div>
     </div>
   );
 }
