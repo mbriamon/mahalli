@@ -18,10 +18,10 @@ function SearchBar({ searchText, category, city, onSearchChange, onCategoryChang
       {/* dropdown to filter by category */}
       <select value={category} onChange={onCategoryChange}>
         <option value="">All Categories</option>
-        <option value="Historical Site">Historical Site</option>
-        <option value="Nature">Nature</option>
-        <option value="Cultural">Cultural</option>
-        <option value="Museum">Museum</option>
+        <option value="historic">historic</option>
+        <option value="nature">nature</option>
+        <option value="culture">culture</option>
+        <option value="food">food</option>
       </select>
 
       {/* dropdown to filter by city */}
