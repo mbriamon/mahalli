@@ -10,7 +10,7 @@ import PreferenceForm from "../components/PreferenceForm";
 import { logoutUser } from "../services/authService";
 import { getMyVisits, getPreferences } from "../services/userService";
 import { getMyReviews, getMyHashtags } from "../services/reviewService";
-import { getMyWishlist } from "../services/wishlistServices";
+import { getMyWishlist } from "../services/wishlistService";
 
 const TABS = ["Diary", "Reviews", "Saved", "Preferences"];
 
@@ -46,6 +46,7 @@ export default function Account() {
   const [visits, setVisits]   = useState([]);
   const [reviews, setReviews] = useState([]);
   const [hashtags, setHashtags] = useState([]);
+  const [wishlist, setWishlist] = useState([]);
   const [loading, setLoading] = useState(true);
   const user                  = Parse.User.current();
   const prefs                 = getPreferences();

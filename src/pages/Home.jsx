@@ -11,6 +11,7 @@ import { getPreferences, hasVisited, getMyVisits } from "../services/userService
 import { getMyHashtags } from "../services/reviewService";
 import { getSpotOfTheDay } from "../services/spotOfTheDay";
 import Parse from "parse";
+import { isWishlisted, addToWishlist, removeFromWishlist } from "../services/wishlistService";
 
 const MOODS = [
   { label: "✌️ Peaceful",    filter: (s) => ["nature", "cafe", "historic"].includes(s.get("Category")) },
@@ -100,6 +101,7 @@ export default function Home() {
   const [activeMood, setActiveMood]   = useState(null);
   const prefs                         = getPreferences();
   const user                          = Parse.User.current();
+  const [wishlistIds, setWishlistIds] = useState(new Set());
 
   useEffect(() => {
     async function load() {
@@ -133,6 +135,17 @@ export default function Home() {
       );
       setVisitedIds(visited);
       setLoading(false);
+
+      // load wishlist state
+      const wSet = new Set();
+      await Promise.all(
+        spots.slice(0, 20).map(async (s) => {
+          const w = await isWishlisted(s.id);
+          if (w) wSet.add(s.id);
+        })
+      );
+      setWishlistIds(wSet);
+
     }
     load();
   }, []);
@@ -187,6 +200,17 @@ export default function Home() {
         .filter((s) => !visitedIds.has(s.id) && s.get("Initial_Rating") >= 4.7)
         .slice(0, 4);
 
+  async function toggleWishlist(e, spotId) {
+    e.stopPropagation();
+    if (wishlistIds.has(spotId)) {
+      await removeFromWishlist(spotId);
+      setWishlistIds((prev) => { const n = new Set(prev); n.delete(spotId); return n; });
+    } else {
+      await addToWishlist(spotId);
+      setWishlistIds((prev) => new Set([...prev, spotId]));
+    }
+}
+
   function FeaturedCard({ spot }) {
     const isVisited = visitedIds.has(spot.id);
     return (
@@ -227,6 +251,13 @@ export default function Home() {
                 + Mark visited
               </button>
             )}
+            <button
+              className={`wishlist-btn${wishlistIds.has(spot.id) ? " active" : ""}`}
+              onClick={(e) => toggleWishlist(e, spot.id)}
+              title={wishlistIds.has(spot.id) ? "Remove from wishlist" : "Save for later"}
+            >
+              {wishlistIds.has(spot.id) ? "♥" : "♡"}
+            </button>
           </div>
         </div>
       </div>
@@ -245,6 +276,12 @@ export default function Home() {
           <span className={getCategoryClass(spot.get("Category"))}>
             {spot.get("Category")}
           </span>
+          <button
+            className={`wishlist-btn${wishlistIds.has(spot.id) ? " active" : ""}`}
+            onClick={(e) => toggleWishlist(e, spot.id)}
+          >
+            {wishlistIds.has(spot.id) ? "♥" : "♡"}
+          </button>
         </div>
       </div>
     );
