@@ -1821,3 +1821,68 @@ a { text-decoration: none; color: inherit; }
   .explore-toolbar { flex-direction: column; align-items: stretch; padding-right: 0; }
   .view-toggle { padding: 8px 16px; justify-content: center; }
 }
+
+/* ── Floating action button ── */
+.fab {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--terra);
+  color: #fff;
+  font-size: 28px;
+  font-weight: 300;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(194,98,63,.4);
+  z-index: 150;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: .2s;
+  line-height: 1;
+}
+.fab:hover {
+  background: var(--terra-d);
+  transform: scale(1.08) rotate(90deg);
+  box-shadow: 0 6px 24px rgba(194,98,63,.5);
+}
+
+/* ── Add spot form extras ── */
+.add-spot-coords {
+  display: flex;
+  gap: 12px;
+}
+.coords-hint {
+  font-size: 11px;
+  color: var(--ink-m);
+  margin-top: 6px;
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+
+.required-star {
+  color: var(--terra);
+  font-size: 13px;
+}
+
+.modal-actions {
+  margin-top: 16px;
+}
+
+/* added by badge on spot detail */
+.added-by-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--terra-p);
+  border: 1px solid var(--terra-l);
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--terra);
+  margin-top: 6px;
+}

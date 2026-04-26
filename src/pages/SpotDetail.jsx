@@ -4,6 +4,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import Parse from "parse";
 import { getTouristSpotById } from "../models/TouristSpot";
 import { getReviewsForSpot } from "../services/reviewService";
 import { hasVisited } from "../services/userService";
@@ -127,6 +128,15 @@ export default function SpotDetail() {
               )}
               <span className="price-range">{spot.get("Price_Range")}</span>
             </div>
+
+            {/* added by badge — only shown to the user who added it */}
+            {spot.get("addedBy") &&
+              spot.get("addedBy").id === Parse.User.current()?.id && (
+              <div className="added-by-badge">
+                ✦ Added by you
+              </div>
+            )}
+
           </div>
         </div>
 
