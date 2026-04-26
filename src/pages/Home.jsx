@@ -7,9 +7,18 @@ import Navbar from "../components/Navbar";
 import ReviewModal from "../components/ReviewModal";
 import Toast from "../components/Toast";
 import { getAllTouristSpots } from "../models/TouristSpot";
-import { getPreferences, hasVisited } from "../services/userService";
+import { getPreferences, hasVisited, getMyVisits } from "../services/userService";
 import { getMyHashtags } from "../services/reviewService";
 import Parse from "parse";
+
+const MOODS = [
+  { label: "✌️ Peaceful",    filter: (s) => ["nature", "cafe", "historic"].includes(s.get("Category")) },
+  { label: "🏃 Adventurous", filter: (s) => ["nature"].includes(s.get("Category")) },
+  { label: "💸 Free spots",  filter: (s) => s.get("Price_Range") === "free" },
+  { label: "🏛 Historic",    filter: (s) => s.get("Category") === "historic" },
+  { label: "☕ Cosy cafes",  filter: (s) => s.get("Category") === "cafe" },
+  { label: "🍽 Food",        filter: (s) => s.get("Category") === "food" },
+];
 
 function scoreSpot(spot, prefs, myHashtags) {
   let score = 0;
@@ -27,10 +36,8 @@ function scoreSpot(spot, prefs, myHashtags) {
   if (prefs.bestTime.includes(time))        score += 1;
   if (prefs.bestSeason.includes(season))    score += 1;
 
-  // bonus score from user's hashtag history matching spot subcategory or category
   myHashtags.forEach(({ tag, count }) => {
-    if (cat.toLowerCase().includes(tag) ||
-        subcat.toLowerCase().includes(tag)) {
+    if (cat.toLowerCase().includes(tag) || subcat.toLowerCase().includes(tag)) {
       score += count * 0.5;
     }
   });
@@ -68,26 +75,42 @@ function getTimeOfDay() {
   return "evening";
 }
 
+// count visits in the current calendar month
+function getMonthStreak(visits) {
+  const now   = new Date();
+  const month = now.getMonth();
+  const year  = now.getFullYear();
+  return visits.filter((v) => {
+    const d = new Date(v.visitedAt);
+    return d.getMonth() === month && d.getFullYear() === year;
+  }).length;
+}
+
 export default function Home() {
-  const navigate                    = useNavigate();
-  const [allSpots, setAllSpots]     = useState([]);
-  const [curated, setCurated]       = useState([]);
-  const [loading, setLoading]       = useState(true);
-  const [reviewSpot, setReviewSpot] = useState(null);
-  const [toast, setToast]           = useState(null);
-  const [visitedIds, setVisitedIds] = useState(new Set());
-  const [myHashtags, setMyHashtags] = useState([]);
-  const prefs                       = getPreferences();
-  const user                        = Parse.User.current();
+  const navigate                      = useNavigate();
+  const [allSpots, setAllSpots]       = useState([]);
+  const [curated, setCurated]         = useState([]);
+  const [loading, setLoading]         = useState(true);
+  const [reviewSpot, setReviewSpot]   = useState(null);
+  const [toast, setToast]             = useState(null);
+  const [visitedIds, setVisitedIds]   = useState(new Set());
+  const [myHashtags, setMyHashtags]   = useState([]);
+  const [myVisits, setMyVisits]       = useState([]);
+  const [activeMood, setActiveMood]   = useState(null);
+  const prefs                         = getPreferences();
+  const user                          = Parse.User.current();
 
   useEffect(() => {
     async function load() {
-      const [spots, tags] = await Promise.all([
+      const [spots, tags, visits] = await Promise.all([
         getAllTouristSpots(),
         getMyHashtags(),
+        getMyVisits(),
       ]);
+
       setAllSpots(spots);
       setMyHashtags(tags);
+      setMyVisits(visits);
 
       const scored = spots
         .map((s) => ({ spot: s, score: scoreSpot(s, prefs, tags) }))
@@ -97,7 +120,6 @@ export default function Home() {
         );
       setCurated(scored.map((s) => s.spot));
 
-      // check visited status for top 20
       const visited = new Set();
       await Promise.all(
         spots.slice(0, 20).map(async (s) => {
@@ -116,18 +138,28 @@ export default function Home() {
      prefs.cities.length > 0 ||
      prefs.priceRange.length > 0);
 
-  const topPicks   = curated.slice(0, 6);
+  const monthStreak = getMonthStreak(myVisits);
+
+  // apply mood filter if one is active
+  const moodFiltered = activeMood
+    ? allSpots.filter(MOODS.find((m) => m.label === activeMood)?.filter || (() => true))
+    : null;
+
+  const topPicks = moodFiltered
+    ? moodFiltered.slice(0, 6)
+    : curated.slice(0, 6);
+
   const hiddenGems = allSpots
     .filter((s) =>
       ["free", "budget"].includes(s.get("Price_Range")) &&
       s.get("Initial_Rating") >= 4.5
     )
     .slice(0, 4);
+
   const citySpots = hasPrefs && prefs.cities.length > 0
     ? allSpots.filter((s) => prefs.cities.includes(s.get("City"))).slice(0, 4)
     : [];
 
-  // hashtag-driven section — spots matching user's top tags
   const tagSpots = myHashtags.length > 0
     ? allSpots
         .filter((s) => {
@@ -139,6 +171,19 @@ export default function Home() {
         })
         .slice(0, 4)
     : [];
+
+  // spots in preferred cities the user hasn't visited yet
+  const notVisitedYet = hasPrefs && prefs.cities.length > 0
+    ? allSpots
+        .filter((s) =>
+          prefs.cities.includes(s.get("City")) &&
+          !visitedIds.has(s.id) &&
+          s.get("Initial_Rating") >= 4.5
+        )
+        .slice(0, 4)
+    : allSpots
+        .filter((s) => !visitedIds.has(s.id) && s.get("Initial_Rating") >= 4.7)
+        .slice(0, 4);
 
   function FeaturedCard({ spot }) {
     const isVisited = visitedIds.has(spot.id);
@@ -210,16 +255,33 @@ export default function Home() {
       {/* personalised greeting */}
       <div className="home-hero">
         <div className="home-hero-inner">
-          <div className="home-greeting">
-            Good {getTimeOfDay()},{" "}
-            <span style={{ color: "var(--terra)" }}>
-              {user?.get("username")}
-            </span> 👋
-          </div>
-          <div className="home-subgreeting">
-            {hasPrefs
-              ? "Here's what we picked for you today based on your preferences."
-              : "Set your preferences on the Account page to get personalised picks."}
+          <div className="home-greeting-row">
+            <div>
+              <div className="home-greeting">
+                Good {getTimeOfDay()},{" "}
+                <span style={{ color: "var(--terra)" }}>
+                  {user?.get("username")}
+                </span> 👋
+              </div>
+              <div className="home-subgreeting">
+                {hasPrefs
+                  ? "Here's what we picked for you today based on your preferences."
+                  : "Set your preferences on the Account page to get personalised picks."}
+              </div>
+            </div>
+
+            {/* streak counter */}
+            {monthStreak > 0 && (
+              <div className="streak-badge">
+                <div className="streak-num">{monthStreak}</div>
+                <div className="streak-label">
+                  {monthStreak === 1 ? "spot" : "spots"}<br />this month
+                </div>
+                <div className="streak-fire">
+                  {monthStreak >= 5 ? "🔥🔥" : monthStreak >= 3 ? "🔥" : "⭐"}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* preference tags */}
@@ -234,7 +296,7 @@ export default function Home() {
             </div>
           )}
 
-          {/* hashtag signals — show what's driving the feed */}
+          {/* hashtag signals */}
           {myHashtags.length > 0 && (
             <div className="home-hashtag-signal">
               <span className="home-hashtag-signal-label">
@@ -256,6 +318,24 @@ export default function Home() {
               </span>
             </div>
           )}
+
+          {/* mood filter */}
+          <div className="mood-filter-row">
+            <span className="mood-filter-label">I'm in the mood for:</span>
+            <div className="mood-chips">
+              {MOODS.map((m) => (
+                <button
+                  key={m.label}
+                  className={`mood-chip${activeMood === m.label ? " active" : ""}`}
+                  onClick={() => setActiveMood(
+                    activeMood === m.label ? null : m.label
+                  )}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -266,15 +346,21 @@ export default function Home() {
       ) : (
         <div className="home-feed">
 
-          {/* top picks */}
+          {/* top picks / mood results */}
           <div className="feed-section">
             <div className="feed-section-header">
               <div className="feed-section-title">
-                {hasPrefs ? "✦ Top picks for you" : "✦ Highest rated spots"}
+                {activeMood
+                  ? `${activeMood} spots`
+                  : hasPrefs
+                  ? "✦ Top picks for you"
+                  : "✦ Highest rated spots"}
               </div>
-              <button className="feed-see-all" onClick={() => navigate("/explore")}>
-                See all →
-              </button>
+              {!activeMood && (
+                <button className="feed-see-all" onClick={() => navigate("/explore")}>
+                  See all →
+                </button>
+              )}
             </div>
             <div className="featured-grid">
               {topPicks.map((spot) => (
@@ -283,8 +369,31 @@ export default function Home() {
             </div>
           </div>
 
-          {/* hashtag-driven section */}
-          {tagSpots.length > 0 && (
+          {/* haven't been yet */}
+          {!activeMood && notVisitedYet.length > 0 && (
+            <div className="feed-section">
+              <div className="feed-section-header">
+                <div className="feed-section-title">
+                  🗺 You haven't been here yet
+                </div>
+              </div>
+              <div className="not-visited-band">
+                <div className="not-visited-sub">
+                  Highly rated spots{hasPrefs && prefs.cities.length > 0
+                    ? ` in ${prefs.cities.slice(0, 2).join(" & ")}`
+                    : ""} waiting for your first visit
+                </div>
+                <div className="mini-grid">
+                  {notVisitedYet.map((spot) => (
+                    <MiniCard key={spot.id} spot={spot} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* hashtag driven */}
+          {!activeMood && tagSpots.length > 0 && (
             <div className="feed-section">
               <div className="feed-section-header">
                 <div className="feed-section-title">
@@ -303,7 +412,7 @@ export default function Home() {
           )}
 
           {/* hidden gems */}
-          {hiddenGems.length > 0 && (
+          {!activeMood && hiddenGems.length > 0 && (
             <div className="feed-section">
               <div className="feed-section-header">
                 <div className="feed-section-title">💎 Hidden gems</div>
@@ -320,7 +429,7 @@ export default function Home() {
           )}
 
           {/* based on your cities */}
-          {citySpots.length > 0 && (
+          {!activeMood && citySpots.length > 0 && (
             <div className="feed-section">
               <div className="feed-section-header">
                 <div className="feed-section-title">

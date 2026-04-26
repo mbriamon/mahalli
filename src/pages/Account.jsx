@@ -27,6 +27,18 @@ function formatMonth(date) {
   });
 }
 
+function getCategoryClass(cat) {
+  if (!cat) return "category category-default";
+  switch (cat.toLowerCase()) {
+    case "food":     return "category category-food";
+    case "cafe":     return "category category-cafe";
+    case "historic": return "category category-historic";
+    case "nature":   return "category category-nature";
+    case "culture":  return "category category-culture";
+    default:         return "category category-default";
+  }
+}
+
 export default function Account() {
   const navigate              = useNavigate();
   const [activeTab, setTab]   = useState("Diary");
@@ -101,6 +113,21 @@ export default function Account() {
           <div className="account-meta">
             {visits.length} places visited · {reviews.length} reviews · {citiesVisited.length} cities
           </div>
+
+          {/* favourite hashtag badge */}
+          {hashtags.length > 0 && (
+            <div className="fav-hashtag-badge">
+              <span className="fav-hashtag-icon">🏷</span>
+              <span className="fav-hashtag-text">
+                You're a{" "}
+                <strong>#{hashtags[0].tag}</strong> traveller
+              </span>
+              <span className="fav-hashtag-sub">
+                · your most used tag
+              </span>
+            </div>
+          )}
+
           {/* top hashtags */}
           {hashtags.length > 0 && (
             <div className="account-tags">
@@ -113,6 +140,51 @@ export default function Account() {
         <button className="logout-btn" onClick={handleLogout}>Sign out</button>
       </div>
 
+      {/* stats row */}
+      <div className="account-stats">
+        <div className="account-stat">
+          <div className="stat-num">{visits.length}</div>
+          <div className="stat-lbl">Places visited</div>
+        </div>
+        <div className="account-stat">
+          <div className="stat-num">{reviews.length}</div>
+          <div className="stat-lbl">Reviews written</div>
+        </div>
+        <div className="account-stat">
+          <div className="stat-num">
+            {reviews.length > 0
+              ? (reviews.reduce((a, r) => a + r.rating, 0) / reviews.length).toFixed(1)
+              : "—"}
+          </div>
+          <div className="stat-lbl">Avg rating</div>
+        </div>
+        <div className="account-stat">
+          <div className="stat-num">{citiesVisited.length}</div>
+          <div className="stat-lbl">Cities explored</div>
+        </div>
+      </div>
+
+      {/* passport stamps */}
+      {citiesVisited.length > 0 && (
+        <div className="passport-strip">
+          <div className="passport-strip-label">🛂 Cities explored</div>
+          <div className="passport-stamps">
+            {citiesVisited.map((city) => (
+              <div key={city} className="passport-stamp">
+                <div className="passport-stamp-inner">
+                  <div className="passport-stamp-city">{city}</div>
+                  <div className="passport-stamp-country">Jordan</div>
+                  <div className="passport-stamp-count">
+                    {visits.filter((v) => v.spot?.city === city).length} visit
+                    {visits.filter((v) => v.spot?.city === city).length !== 1 ? "s" : ""}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      
       {/* stats row */}
       <div className="account-stats">
         <div className="account-stat">
@@ -171,78 +243,98 @@ export default function Account() {
               </div>
             )}
 
-            {/* grouped by month */}
-            {Object.entries(grouped).map(([month, entries]) => (
-              <div key={month} className="diary-month-group">
-                <div className="diary-month-label">{month}</div>
-                {entries.map((entry) => (
-                  <div
-                    key={entry.id}
-                    className="diary-card"
-                    onClick={() => navigate(`/spot/${entry.spot.id}`)}
-                  >
-                    {/* photo if exists */}
-                    {entry.review?.imageUrl && (
-                      <img
-                        src={entry.review.imageUrl}
-                        alt={entry.spot.name}
-                        className="diary-photo"
-                        onError={(e) => { e.target.style.display = "none"; }}
-                      />
-                    )}
+            {/* timeline */}
+            <div className="diary-timeline">
+              {Object.entries(grouped).map(([month, entries]) => (
+                <div key={month} className="diary-month-group">
 
-                    <div className="diary-card-body">
-                      {/* date stamp */}
-                      <div className="diary-date">{formatDate(entry.visitedAt)}</div>
+                  {/* month milestone */}
+                  <div className="diary-milestone">
+                    <div className="diary-milestone-dot" />
+                    <div className="diary-milestone-label">{month}</div>
+                  </div>
 
-                      {/* spot info */}
-                      <div className="diary-spot-name">{entry.spot.name}</div>
-                      <div className="diary-spot-meta">
-                        📍 {entry.spot.city}
-                        {entry.spot.category && ` · ${entry.spot.category}`}
+                  {entries.map((entry, i) => (
+                    <div key={entry.id} className="diary-timeline-row">
+                      {/* spine connector */}
+                      <div className="diary-spine">
+                        <div className="diary-spine-line" />
+                        <div className="diary-spine-node" />
                       </div>
 
-                      {/* review content */}
-                      {entry.review ? (
-                        <div className="diary-review-content">
-                          {/* stars */}
-                          <div className="diary-stars">
-                            {"★".repeat(entry.review.rating)}
-                            {"☆".repeat(5 - entry.review.rating)}
-                            <span className="diary-rating-num">
-                              {entry.review.rating} / 5
-                            </span>
-                          </div>
-
-                          {/* comment */}
-                          {entry.review.comment && (
-                            <p className="diary-comment">
-                              "{entry.review.comment}"
-                            </p>
-                          )}
-
-                          {/* hashtags */}
-                          {entry.review.hashtags.length > 0 && (
-                            <div className="diary-tags">
-                              {entry.review.hashtags.map((t) => (
-                                <span key={t} className="tag-pill">#{t}</span>
-                              ))}
+                      {/* polaroid card */}
+                      <div
+                        className={`diary-polaroid ${i % 2 === 0 ? "tilt-left" : "tilt-right"}`}
+                        onClick={() => navigate(`/spot/${entry.spot.id}`)}
+                      >
+                        {/* photo area */}
+                        <div className="polaroid-photo-wrap">
+                          {entry.review?.imageUrl ? (
+                            <img
+                              src={entry.review.imageUrl}
+                              alt={entry.spot.name}
+                              className="polaroid-photo"
+                              onError={(e) => { e.target.style.display = "none"; }}
+                            />
+                          ) : (
+                            <div className="polaroid-photo-empty">
+                              {entry.spot.category === "food"     ? "🍽" :
+                               entry.spot.category === "cafe"     ? "☕" :
+                               entry.spot.category === "historic" ? "🏛" :
+                               entry.spot.category === "nature"   ? "🌿" :
+                               entry.spot.category === "culture"  ? "🎨" : "📍"}
                             </div>
                           )}
                         </div>
-                      ) : (
-                        <div className="diary-no-review">
-                          No review written yet —{" "}
-                          <span style={{ color: "var(--terra)", fontWeight: 500 }}>
-                            tap to add one
-                          </span>
+
+                        {/* polaroid caption area */}
+                        <div className="polaroid-body">
+                          {/* category stamp */}
+                          <div className="polaroid-stamp">
+                            <span className={getCategoryClass(entry.spot.category)}>
+                              {entry.spot.category}
+                            </span>
+                          </div>
+
+                          {/* spot name in journal font */}
+                          <div className="polaroid-name">{entry.spot.name}</div>
+                          <div className="polaroid-location">📍 {entry.spot.city}</div>
+
+                          {/* date in margin style */}
+                          <div className="polaroid-date">{formatDate(entry.visitedAt)}</div>
+
+                          {/* review content */}
+                          {entry.review ? (
+                            <div className="polaroid-review">
+                              <div className="polaroid-stars">
+                                {"★".repeat(entry.review.rating)}
+                                {"☆".repeat(5 - entry.review.rating)}
+                              </div>
+                              {entry.review.comment && (
+                                <div className="polaroid-comment">
+                                  "{entry.review.comment}"
+                                </div>
+                              )}
+                              {entry.review.hashtags.length > 0 && (
+                                <div className="polaroid-tags">
+                                  {entry.review.hashtags.map((t) => (
+                                    <span key={t} className="tag-pill">#{t}</span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="polaroid-no-review">
+                              tap to add a review ✏️
+                            </div>
+                          )}
                         </div>
-                      )}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            ))}
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
