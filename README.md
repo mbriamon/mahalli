@@ -1,4 +1,4 @@
-# Mahalee 🇯🇴 by Mary Briamonte(A) and Layann Wardeh(B)
+# Mahalli 🇯🇴 by Mary Briamonte(A) and Layann Wardeh(B)
 
 https://github.com/mbriamon/mahalli
 
