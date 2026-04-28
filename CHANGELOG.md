@@ -1,6 +1,43 @@
 # Changelog
 
-## [0.3.0] - 3/27/2026
+## [0.4.0] - 4/27/2026
+
+### Added (Student A - Mary)
+- Full Mahalli design system in index.css with CSS custom properties, Playfair Display and DM Sans typography, and Jordan-inspired colour palette
+- For You page (Home.jsx) with preference-based spot scoring algorithm
+- Spot of the day feature that rotates deterministically by date
+- Mood filter chips on For You page for quick feed filtering
+- Streak counter showing spots visited in the current month
+- Account page with polaroid-style travel diary grouped by month on a timeline
+- Passport stamp section on Account page showing cities visited
+- Favourite hashtag badge and taste profile on Account page
+- Review system with star ratings, comments, hashtags, and image URL
+- Auto-updating user preferences based on visited spots and review hashtags
+- Personalised toast notifications after logging a visit
+- Add Spot modal with floating action button accessible from any page
+- Wishlist feature with Save tab on Account page using new Wishlist Parse class
+- mapService.js with getAllSpots, getSpotById, and getMappableSpots methods
+- userService.js with visit recording, preference saving, and toast message generation
+- reviewService.js with review submission, spot reviews fetch, and user hashtag aggregation
+- wishlistService.js with add, remove, check, and fetch wishlist methods
+- spotOfTheDay.js utility for deterministic daily spot selection
+- Onboarding page with preference form shown to new users after registration
+- PreferenceForm component reused across Onboarding and Account pages
+- SpotCard component with category colour variants
+- Toast component for bottom-right animated notifications
+- Navbar component shared across all pages with active tab highlighting
+
+### Added (Student B - Layann)
+- Interactive map on Explore page using React-Leaflet and GeoJSON
+- Three view modes on Explore page: grid, split, and full map
+- Category-coloured map pins with custom Leaflet divIcon per spot category
+- Spot popups on map with name, category, rating, and View Details button
+- Sort dropdown on Explore page by top rated and newest added
+- Near Me button that sorts spots by distance from a reference location
+- Hashtag and review search so users can search by #tag across all reviews
+- Wishlist toggle button on every spot card in Explore grid and split views
+- Updated App.jsx routing to add /map and /explore routes
+- Updated Back4App TouristSpot schema with Latitude and Longitude Number fields
 
 ## [0.3.0] - 3/27/2026
 
